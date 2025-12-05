@@ -1,9 +1,10 @@
 import pygame
 import random
+from intro import show_intro_screen
+
 pygame.init()
 
-
-width, height=800,600
+width, height=1000,600
 basket_w, basket_h=120,30
 basket_Y_offset, basket_speed, basket_color =50,8,(255,75,0)
 fruit_y,fruit_c, fruit_r,fruit_speed = 0,(255,0,0),20,5
@@ -26,6 +27,7 @@ for _ in range(num_fruits):
 score =0
 font=pygame.font.SysFont("Arial",36)
 
+show_intro_screen(screen, clock,"C:/Users/DATA/Documents/Documents/f_f_game/framesfolder", black)
 
 running = True
 while running:
