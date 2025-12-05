@@ -76,7 +76,7 @@ fruit_imgs = [
 
 screen = pygame.display.set_mode((width, height))
 
-# Sound & Music setup 
+# sound & music setup 
 try:
     pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=512)
     print("Mixer initialized:", pygame.mixer.get_init())
@@ -99,7 +99,7 @@ def load_sound(path):
         print("Error loading sound", path, ":", e)
         return None
 
-# Load SFX
+# load sfx
 catch_sfx = load_sound("catch.mp3")
 miss_sfx  = load_sound("miss.mp3")
 gameover_sfx=load_sound("game_over.mp3")
@@ -211,7 +211,7 @@ def draw_title():
     sub_rect = sub.get_rect(center=(width // 2, 90))
     screen.blit(sub, sub_rect)
 
-# Timer config 
+# timer config 
 GAME_TIME_SECONDS = 60
 time_left = GAME_TIME_SECONDS * 1.0 
 
@@ -227,7 +227,7 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-    # Input 
+    # input 
     keys = pygame.key.get_pressed()
     if not game_over:
         # basket input 
@@ -241,7 +241,7 @@ while running:
         basket_velocity *= basket_friction
         basket_x = max(0, min(width - basket_w, basket_x))
 
-        # UPDATE fruits & collisions 
+        # update fruits & collisions 
         basket_rect = pygame.Rect(basket_x, basket_y, basket_w, basket_h)
         for fruit in fruits:
             fruit[1] += fruit_speed
@@ -264,7 +264,7 @@ while running:
                         print("Failed to play miss_sfx:", e)
                 respawn_fruit(fruit)
 
-    # TIMER update 
+    # timae update 
     dt_seconds = dt / 1000.0
     if not game_over:
         time_left -= dt_seconds
@@ -308,7 +308,7 @@ while running:
 
 
     if game_over:
-        # calcul du alpha du fade
+        #  alpha fade
         if fade_in:
             elapsed = pygame.time.get_ticks() - fade_start
             fade_alpha = min(255, int((elapsed / 700) * 255))
@@ -320,7 +320,7 @@ while running:
         overlay.fill((0, 0, 0, int(180 * (fade_alpha/255))))
         screen.blit(overlay, (0,0))
 
-        # texte Game Over
+        # Game Over txt
         go_font = pygame.font.SysFont("Arial", 64, bold=True)
         go_surf = go_font.render("Time's up!", True, (255,255,255))
         screen.blit(go_surf, go_surf.get_rect(center=(width//2, height//2 - 40)))
