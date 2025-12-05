@@ -2,6 +2,7 @@ import pygame
 import os
 import sys
 
+
 def load_gif_frames(folder):
     frames = []
     for filename in sorted(os.listdir(folder)):
@@ -11,19 +12,22 @@ def load_gif_frames(folder):
     return frames
 
 def show_intro_screen(screen,clock,bg_c,black):
+    yellow = (255, 215, 0)
+    purple= (148,0,211)
     width, height = screen.get_size()
     frames = load_gif_frames("C:/Users/DATA/Documents/Documents/f_f_game/framesfolder")
     if not frames:
         raise RuntimeError("Aucune frame trouvée ! Vérifie le dossier et les fichiers PNG")
 
     # Fonts
-    font_title = pygame.font.SysFont(None, 60)
-    font_sub = pygame.font.SysFont(None, 36)
+    font_title = pygame.font.SysFont("Comic Sans MS", 70, bold=True)
+    font_sub = font_sub = pygame.font.SysFont("Comic Sans MS", 36)
 
     # Text surfaces
-    title_surf = font_title.render("🍹 Falling Fruits 🍎", True, black)
-    subtitle1_surf = font_sub.render("Let's make some juice!", True, black)
-    subtitle2_surf = font_sub.render("Press any key to begin...", True, black)
+    title_shadow = font_title.render("Falling Fruits" , True, black)
+    title_surf = font_title.render("Falling Fruits ", True, yellow)
+    subtitle1_surf = font_sub.render("Let's make some juice!", True, purple)
+    subtitle2_surf = font_sub.render("Press any key to begin...", True, purple)
 
     # Rects for centering
     title_rect = title_surf.get_rect(center=(width//2, 150))
@@ -32,7 +36,8 @@ def show_intro_screen(screen,clock,bg_c,black):
 
     frame_index = 0
     frame_timer = 0
-    frame_interval = 1/12  
+    frame_interval = 1/12
+
     blink_timer = 0
     intro = True
 
@@ -55,8 +60,9 @@ def show_intro_screen(screen,clock,bg_c,black):
 
         # frame drawing
         frame = frames[frame_index]
-        frame_rect = frame.get_rect(center=(width//2, height//2))  
+        frame_rect = frame.get_rect(center=(width//2, height//2))
         screen.blit(frame, frame_rect)
+        screen.blit(title_shadow, title_rect.move(3, 3))
         screen.blit(title_surf, title_rect)
         screen.blit(subtitle1_surf, subtitle1_rect)
 

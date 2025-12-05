@@ -8,8 +8,20 @@ width, height=1000,600
 basket_w, basket_h=120,30
 basket_Y_offset, basket_speed, basket_color =50,8,(255,75,0)
 fruit_y,fruit_c, fruit_r,fruit_speed = 0,(255,0,0),20,5
-white, black, bg_color=(255,255,255), (0,0,0) ,(135,206,235)
+white, black,  bg_color = (255,255,255), (0,0,0) , (135,206,235)
 num_fruits=5
+
+basket_img = pygame.image.load("basket.png").convert()
+basket_img = pygame.transform.smoothscale(basket_img, (basket_w, basket_h))
+
+fruit_imgs = [
+    pygame.image.load("apple.png").convert(),
+    pygame.image.load("banana.png").convert(),
+    pygame.image.load("orange.png").convert()
+]
+fruit_r = 20 
+for i in range(len(fruit_imgs)):
+    fruit_imgs[i] = pygame.transform.smoothscale(fruit_imgs[i], (fruit_r*2, fruit_r*2))
 
 screen= pygame.display.set_mode((width,height))
 pygame.display.set_caption("Falling Fruits")
@@ -58,9 +70,11 @@ while running:
             fruit[0]=random.randint(fruit_r,width-fruit_r)
 
     screen.fill(bg_color)
-    pygame.draw.rect(screen, basket_color, (basket_x, basket_y, basket_w, basket_h) )
+    screen.blit(basket_img, (basket_x, basket_y))
     for fruit in fruits:
-        pygame.draw.circle(screen,fruit_c,(fruit[0],fruit[1]),fruit_r)
+        fruit_img = random.choice(fruit_imgs) 
+        screen.blit(fruit_img, (fruit[0]-fruit_r, fruit[1]-fruit_r))
+
 
     score_test=font.render(f"Score={score}",True,black)
     screen.blit(score_test,(10,10))
