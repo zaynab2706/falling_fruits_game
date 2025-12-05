@@ -9,7 +9,7 @@ pygame.init()
 #Settings
 width, height = 1000, 600
 
-basket_w, basket_h = 120, 30
+basket_w, basket_h = 120, 60
 basket_Y_offset = 50
 basket_speed = 8
 basket_velocity = 0
@@ -212,7 +212,7 @@ def draw_title():
     screen.blit(sub, sub_rect)
 
 # Timer config 
-GAME_TIME_SECONDS = 20 
+GAME_TIME_SECONDS = 60
 time_left = GAME_TIME_SECONDS * 1.0 
 
 # visual timer settings
