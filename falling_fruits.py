@@ -1,6 +1,8 @@
 import pygame
 import random
 import os
+import math
+
 from intro import show_intro_screen  
 
 pygame.init()
@@ -11,6 +13,11 @@ width, height = 1000, 600
 basket_w, basket_h = 120, 30
 basket_Y_offset = 50
 basket_speed = 8
+basket_velocity = 0
+basket_acceleration = 1
+basket_max_speed = 10
+basket_friction = 0.85
+
 
 fruit_r = 20           
 fruit_speed = 5
@@ -20,6 +27,8 @@ WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 BG_COLOR = (135, 206, 235)
 BASKET_COLOR = (255, 75, 0)
+YELLOW = (255, 215, 0)
+PURPLE= (148,0,211)
 
 
 def load_image(path, size=None):
@@ -38,6 +47,23 @@ def load_image(path, size=None):
     if size:
         img = pygame.transform.smoothscale(img, size)
     return img
+
+def draw_shadow(screen, x, y, r):
+    shadow = pygame.Surface((r*2, r), pygame.SRCALPHA)
+    pygame.draw.ellipse(shadow, (0,0,0,80), shadow.get_rect())
+    screen.blit(shadow, (x-r, y-r//2 + 10))
+
+def draw_score(screen, score, font):
+    text = font.render(f"Score: {score}", True, (0,0,0))
+    padding = 12
+    box = pygame.Surface((text.get_width()+padding*2, text.get_height()+padding*2), pygame.SRCALPHA)
+
+    pygame.draw.rect(box, (0,0,0,60), (4,4, box.get_width(), box.get_height()), border_radius=12)
+
+    pygame.draw.rect(box, (255,255,255,230), (0,0,box.get_width(),box.get_height()), border_radius=12)
+    box.blit(text, (padding, padding))
+
+    screen.blit(box, (20, 20))
 
 
 basket_img = load_image("C:/Users/DATA/Documents/Documents/f_f_game/basket.png", (basket_w, basket_h))
@@ -66,8 +92,8 @@ for _ in range(num_fruits):
     fruits.append([x, y, img_index])
 
 score = 0
-font = pygame.font.SysFont("Arial", 36)
-title_font = pygame.font.SysFont("Arial", 64, bold=True)
+font = pygame.font.SysFont("Comic Sans MS", 36)
+title_font = pygame.font.SysFont("Comic Sans MS", 64, bold=True)
 subtitle_font = pygame.font.SysFont("Arial", 28)
 
 
@@ -86,13 +112,13 @@ def respawn_fruit(fruit):
 def draw_title():
     title = "Falling Fruits"
     subtitle = "Use ← → to move the basket — Catch the fruits!"
-    txt = title_font.render(title, True, WHITE)
+    txt = title_font.render(title, True, YELLOW)
     shadow = title_font.render(title, True, (0, 0, 0))
     tx_rect = txt.get_rect(center=(width // 2, 40))
     screen.blit(shadow, (tx_rect.x + 2, tx_rect.y + 2))
     screen.blit(txt, tx_rect)
     #subtitles
-    sub = subtitle_font.render(subtitle, True, BLACK)
+    sub = subtitle_font.render(subtitle, True, PURPLE)
     sub_rect = sub.get_rect(center=(width // 2, 90))
     screen.blit(sub, sub_rect)
 
@@ -112,7 +138,9 @@ while running:
         basket_x += basket_speed
 
     
-    basket_x = max(0, min(width - basket_w, basket_x))
+    asket_velocity = max(-basket_max_speed, min(basket_max_speed, basket_velocity))
+    basket_x += basket_velocity
+    basket_velocity *= basket_friction
 
     
     basket_rect = pygame.Rect(basket_x, basket_y, basket_w, basket_h)
@@ -137,11 +165,13 @@ while running:
     screen.blit(basket_img, (basket_x, basket_y))
 
     for fruit in fruits:
+        offset_x = math.sin(fruit[1] * 0.05) * 3  
+        draw_shadow(screen, fruit[0], fruit[1], fruit_r)
         img = fruit_imgs[fruit[2]]
-        screen.blit(img, (fruit[0] - fruit_r, fruit[1] - fruit_r))
+        screen.blit(img, (fruit[0] - fruit_r + offset_x, fruit[1] - fruit_r))
 
-    score_surf = font.render(f"Score: {score}", True, BLACK)
-    screen.blit(score_surf, (10, 10))
+    draw_score(screen, score, font)
+
 
     pygame.display.flip()
 
