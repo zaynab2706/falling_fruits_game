@@ -102,6 +102,7 @@ def load_sound(path):
 # Load SFX
 catch_sfx = load_sound("catch.mp3")
 miss_sfx  = load_sound("miss.mp3")
+gameover_sfx=load_sound("game_over.mp3")
 
 #volume settings
 if catch_sfx:
@@ -133,6 +134,35 @@ play_bgm("bg_music.mp3")
 muted = False
 prev_sfx_vol = SFX_VOLUME
 prev_mus_vol = MUSIC_VOLUME
+game_over = False
+fade_in = False
+fade_start = 0
+fade_alpha = 0
+
+def format_time(seconds):
+    s = max(0, int(round(seconds)))
+    mins = s // 60
+    secs = s % 60
+    return f"{mins:02d}:{secs:02d}"
+
+def draw_timer(surface, time_left, font, x=None, y=20):
+    txt = format_time(time_left)
+    if time_left <= TIMER_WARNING_SECONDS:
+        color = (220, 50, 50) 
+        pulse = (1 + 0.2 * math.sin(pygame.time.get_ticks() * 0.01))
+    else:
+        color = (0, 0, 0)
+        pulse = 1.0
+
+    timer_surf = font.render(txt, True, color)
+    if pulse != 1.0:
+        sw = pygame.transform.rotozoom(timer_surf, 0, pulse)
+    else:
+        sw = timer_surf
+
+    if x is None:
+        x = surface.get_width() - sw.get_width() - 20
+    surface.blit(sw, (x, y))
 
 
 pygame.display.set_caption("Falling Fruits")
@@ -181,68 +211,140 @@ def draw_title():
     sub_rect = sub.get_rect(center=(width // 2, 90))
     screen.blit(sub, sub_rect)
 
+# Timer config 
+GAME_TIME_SECONDS = 20 
+time_left = GAME_TIME_SECONDS * 1.0 
+
+# visual timer settings
+timer_font = pygame.font.SysFont("Comic sans Ms", 36, bold=True)
+TIMER_WARNING_SECONDS = 10  
+
 #essential loop
 running = True
 while running:
-    dt = clock.tick(60) 
+    dt = clock.tick(60)
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
 
-    
+    # Input 
     keys = pygame.key.get_pressed()
-    if keys[pygame.K_LEFT]:
-        basket_x -= basket_speed
-    if keys[pygame.K_RIGHT]:
-        basket_x += basket_speed
+    if not game_over:
+        # basket input 
+        if keys[pygame.K_LEFT]:
+            basket_velocity -= basket_acceleration
+        if keys[pygame.K_RIGHT]:
+            basket_velocity += basket_acceleration
 
-    
-    asket_velocity = max(-basket_max_speed, min(basket_max_speed, basket_velocity))
-    basket_x += basket_velocity
-    basket_velocity *= basket_friction
+        basket_velocity = max(-basket_max_speed, min(basket_max_speed, basket_velocity))
+        basket_x += basket_velocity
+        basket_velocity *= basket_friction
+        basket_x = max(0, min(width - basket_w, basket_x))
 
-    
-    basket_rect = pygame.Rect(basket_x, basket_y, basket_w, basket_h)
-    for fruit in fruits:
-        fruit[1] += fruit_speed
-        fruit_rect = pygame.Rect(fruit[0] - fruit_r, fruit[1] - fruit_r, fruit_r * 2, fruit_r * 2)
+        # UPDATE fruits & collisions 
+        basket_rect = pygame.Rect(basket_x, basket_y, basket_w, basket_h)
+        for fruit in fruits:
+            fruit[1] += fruit_speed
+            fruit_rect = pygame.Rect(fruit[0] - fruit_r, fruit[1] - fruit_r, fruit_r * 2, fruit_r * 2)
 
-        #fruit caught
-        if basket_rect.colliderect(fruit_rect):
-            score += 1
-            if catch_sfx and not muted:
-                try:
-                    catch_sfx.play()
-                except Exception as e:
-                    print("Failed to play catch_sfx:", e)
-            respawn_fruit(fruit)
+            if basket_rect.colliderect(fruit_rect):
+                score += 1
+                if catch_sfx and not muted:
+                    try:
+                        catch_sfx.play()
+                    except Exception as e:
+                        print("Failed to play catch_sfx:", e)
+                respawn_fruit(fruit)
 
-        
-        if fruit[1] - fruit_r > height:
-            if miss_sfx and not muted:
-                try:
-                    miss_sfx.play()
-                except Exception as e:
-                    print("Failed to play miss_sfx:", e)
-            respawn_fruit(fruit)
+            elif fruit[1] - fruit_r > height:
+                if miss_sfx and not muted:
+                    try:
+                        miss_sfx.play()
+                    except Exception as e:
+                        print("Failed to play miss_sfx:", e)
+                respawn_fruit(fruit)
 
-    
+    # TIMER update 
+    dt_seconds = dt / 1000.0
+    if not game_over:
+        time_left -= dt_seconds
+        if time_left <= 0:
+            time_left = 0
+            game_over = True
+
+            # fade music
+            try:
+                if pygame.mixer.get_init():
+                    pygame.mixer.music.fadeout(800)
+            except Exception as e:
+                print("Warning music fadeout:", e)
+
+            # play gameover sfx 
+            try:
+                if gameover_sfx and not muted:
+                    gameover_sfx.play()
+            except Exception as e:
+                print("Warning playing gameover_sfx:", e)
+
+
+            
+            fade_in = True
+            fade_start = pygame.time.get_ticks()
+            fade_alpha = 0
+
+    #drawing
     screen.fill(BG_COLOR)
-
     draw_title()
-
     screen.blit(basket_img, (basket_x, basket_y))
 
-    for fruit in fruits:
-        offset_x = math.sin(fruit[1] * 0.05) * 3  
+    for idx, fruit in enumerate(fruits):
+        offset_x = math.sin(fruit[1] * 0.05) * 3
         draw_shadow(screen, fruit[0], fruit[1], fruit_r)
         img = fruit_imgs[fruit[2]]
         screen.blit(img, (fruit[0] - fruit_r + offset_x, fruit[1] - fruit_r))
 
     draw_score(screen, score, font)
+    draw_timer(screen, time_left, timer_font)
 
+
+    if game_over:
+        # calcul du alpha du fade
+        if fade_in:
+            elapsed = pygame.time.get_ticks() - fade_start
+            fade_alpha = min(255, int((elapsed / 700) * 255))
+            if fade_alpha >= 255:
+                fade_in = False
+
+        # overlay sombre
+        overlay = pygame.Surface((width, height), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, int(180 * (fade_alpha/255))))
+        screen.blit(overlay, (0,0))
+
+        # texte Game Over
+        go_font = pygame.font.SysFont("Arial", 64, bold=True)
+        go_surf = go_font.render("Time's up!", True, (255,255,255))
+        screen.blit(go_surf, go_surf.get_rect(center=(width//2, height//2 - 40)))
+
+        sub = font.render(f"Score: {score}", True, (255,255,255))
+        screen.blit(sub, sub.get_rect(center=(width//2, height//2 + 20)))
+
+        hint = subtitle_font.render("Press R to restart or Q to quit", True, (255,255,255))
+        screen.blit(hint, hint.get_rect(center=(width//2, height//2 + 70)))
+
+        if keys[pygame.K_r]:
+            score = 0
+            time_left = GAME_TIME_SECONDS
+            game_over = False
+            fade_in = False
+            fade_alpha = 0
+            for f in fruits:
+                respawn_fruit(f)
+            play_bgm("bg_music.mp3")
+        if keys[pygame.K_q] or keys[pygame.K_ESCAPE]:
+            running = False
 
     pygame.display.flip()
 
 pygame.quit()
+
 
