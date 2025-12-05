@@ -2,7 +2,6 @@ import pygame
 import random
 import os
 import math
-
 from intro import show_intro_screen  
 
 pygame.init()
@@ -76,6 +75,66 @@ fruit_imgs = [
 
 
 screen = pygame.display.set_mode((width, height))
+
+# Sound & Music setup 
+try:
+    pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=512)
+    print("Mixer initialized:", pygame.mixer.get_init())
+except Exception as e:
+    print("Warning: mixer failed to initialize:", e)
+
+# volume control
+SFX_VOLUME = 0.7   
+MUSIC_VOLUME = 0.5 
+
+# sound effects loading
+def load_sound(path):
+    if not os.path.exists(path):
+        print("Sound file not found:", path)
+        return None
+    try:
+        snd = pygame.mixer.Sound(path)
+        return snd
+    except Exception as e:
+        print("Error loading sound", path, ":", e)
+        return None
+
+# Load SFX
+catch_sfx = load_sound("catch.mp3")
+miss_sfx  = load_sound("miss.mp3")
+
+#volume settings
+if catch_sfx:
+    catch_sfx.set_volume(SFX_VOLUME)
+if miss_sfx:
+    miss_sfx.set_volume(SFX_VOLUME)
+
+def play_bgm(path="bgm.ogg", loop=-1, fade_ms=800):
+    if not os.path.exists(path):
+        print("BGM not found:", path)
+        return
+    try:
+        pygame.mixer.music.load(path)
+        pygame.mixer.music.set_volume(MUSIC_VOLUME)
+        pygame.mixer.music.play(loop, 0.0)
+        print("BGM playing:", path)
+    except Exception as e:
+        print("Error playing BGM", path, ":", e)
+
+def stop_bgm(fade_ms=500):
+    try:
+        pygame.mixer.music.fadeout(fade_ms)
+    except Exception as e:
+        print("Error stopping BGM:", e)
+
+
+play_bgm("bg_music.mp3")
+
+muted = False
+prev_sfx_vol = SFX_VOLUME
+prev_mus_vol = MUSIC_VOLUME
+
+
 pygame.display.set_caption("Falling Fruits")
 clock = pygame.time.Clock()
 
@@ -148,13 +207,23 @@ while running:
         fruit[1] += fruit_speed
         fruit_rect = pygame.Rect(fruit[0] - fruit_r, fruit[1] - fruit_r, fruit_r * 2, fruit_r * 2)
 
-        
+        #fruit caught
         if basket_rect.colliderect(fruit_rect):
             score += 1
+            if catch_sfx and not muted:
+                try:
+                    catch_sfx.play()
+                except Exception as e:
+                    print("Failed to play catch_sfx:", e)
             respawn_fruit(fruit)
 
         
         if fruit[1] - fruit_r > height:
+            if miss_sfx and not muted:
+                try:
+                    miss_sfx.play()
+                except Exception as e:
+                    print("Failed to play miss_sfx:", e)
             respawn_fruit(fruit)
 
     
